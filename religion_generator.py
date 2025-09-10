@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class ReligionGenerator:
-    """Din üretici ana sınıfı"""
+    """Main religion generator class"""
     
     def __init__(self):
         self.gemini_client = GeminiClient()
@@ -24,30 +24,30 @@ class ReligionGenerator:
         language: str = "Turkish"
     ) -> Religion:
         """
-        Tam bir din sistemi üretir
+        Generates a complete religion system
         
         Args:
-            theme: Din teması (doğa, savaş, bilgelik, vb.)
-            culture: Kültürel etki (antik, modern, fantastik, vb.)
-            complexity: Karmaşıklık seviyesi (simple, medium, complex)
-            deity_type: Tanrı türü (monotheistic, polytheistic, vb.)
-            language: Din üretilecek dil (Turkish, English, Spanish, vb.)
+            theme: Religion theme (nature, war, wisdom, etc.)
+            culture: Cultural influence (ancient, modern, fantasy, etc.)
+            complexity: Complexity level (simple, medium, complex)
+            deity_type: Deity type (monotheistic, polytheistic, etc.)
+            language: Language for religion generation (Turkish, English, Spanish, etc.)
         """
         
-        logger.info(f"Yeni din üretiliyor - Tema: {theme}, Kültür: {culture}, Karmaşıklık: {complexity}")
+        logger.info(f"Generating new religion - Theme: {theme}, Culture: {culture}, Complexity: {complexity}")
         
         try:
-            # Gemini'den ham veri al
+            # Get raw data from Gemini
             raw_data = self.gemini_client.generate_religion(theme, culture, complexity, deity_type, language)
             
-            # Pydantic modellerine dönüştür
+            # Convert to Pydantic models
             religion = self._convert_to_models(raw_data)
             
-            logger.info(f"Başarıyla üretildi: {religion.name}")
+            logger.info(f"Successfully generated: {religion.name}")
             return religion
             
         except Exception as e:
-            logger.error(f"Din üretim hatası: {str(e)}")
+            logger.error(f"Religion generation error: {str(e)}")
             raise
     
     def generate_specific_component(
@@ -57,60 +57,60 @@ class ReligionGenerator:
         existing_religion: Optional[Religion] = None
     ) -> Dict[str, Any]:
         """
-        Belirli bir din bileşeni üretir
+        Generates a specific religion component
         
         Args:
-            component_type: Bileşen türü (deity, ritual, legend, vb.)
-            context: Bağlam bilgisi
-            existing_religion: Mevcut din (tutarlılık için)
+            component_type: Component type (deity, ritual, legend, etc.)
+            context: Context information
+            existing_religion: Existing religion (for consistency)
         """
         
         if existing_religion:
-            context += f" Mevcut din: {existing_religion.name}. "
-            context += f"Temel inançlar: {', '.join(existing_religion.core_beliefs)}"
+            context += f" Existing religion: {existing_religion.name}. "
+            context += f"Core beliefs: {', '.join(existing_religion.core_beliefs)}"
         
         return self.gemini_client.generate_specific_component(component_type, context)
     
     def _convert_to_models(self, raw_data: Dict[str, Any]) -> Religion:
-        """Ham veriyi Pydantic modellerine dönüştürür"""
+        """Converts raw data to Pydantic models"""
         
         try:
-            # Tanrıları dönüştür
+            # Convert deities
             deities = []
             for deity_data in raw_data.get("deities", []):
                 deities.append(Deity(**deity_data))
             
-            # Kutsal metinleri dönüştür
+            # Convert sacred texts
             sacred_texts = []
             for text_data in raw_data.get("sacred_texts", []):
                 sacred_texts.append(SacredText(**text_data))
             
-            # Ritüelleri dönüştür
+            # Convert rituals
             rituals = []
             for ritual_data in raw_data.get("rituals", []):
                 rituals.append(Ritual(**ritual_data))
             
-            # Ahlaki kuralları dönüştür
+            # Convert moral rules
             moral_rules = []
             for rule_data in raw_data.get("moral_rules", []):
                 moral_rules.append(MoralRule(**rule_data))
             
-            # Efsaneleri dönüştür
+            # Convert legends
             legends = []
             for legend_data in raw_data.get("legends", []):
                 legends.append(MythologicalLegend(**legend_data))
             
-            # Ödül-ceza sistemini dönüştür
+            # Convert reward-punishment system
             reward_punishment = RewardPunishment(**raw_data.get("reward_punishment", {}))
             
-            # Sembolleri dönüştür
+            # Convert symbols
             symbols = []
             for symbol_data in raw_data.get("symbols", []):
                 symbols.append(Symbol(**symbol_data))
             
-            # Ana din modelini oluştur
+            # Create main religion model
             religion = Religion(
-                name=raw_data.get("name", "İsimsiz Din"),
+                name=raw_data.get("name", "Unnamed Religion"),
                 description=raw_data.get("description", ""),
                 deity_type=DeityType(raw_data.get("deity_type", "polytheistic")),
                 language=raw_data.get("language", "Turkish"),
@@ -131,8 +131,8 @@ class ReligionGenerator:
             return religion
             
         except Exception as e:
-            logger.error(f"Model dönüştürme hatası: {str(e)}")
-            raise ValueError(f"Veri dönüştürme hatası: {str(e)}")
+            logger.error(f"Model conversion error: {str(e)}")
+            raise ValueError(f"Data conversion error: {str(e)}")
     
     def generate_religion_variations(
         self, 
@@ -140,11 +140,11 @@ class ReligionGenerator:
         count: int = 3
     ) -> list[Religion]:
         """
-        Aynı temadan farklı din varyasyonları üretir
+        Generates different religion variations from the same theme
         
         Args:
-            base_theme: Temel tema
-            count: Üretilecek din sayısı
+            base_theme: Base theme
+            count: Number of religions to generate
         """
         
         variations = []
@@ -163,18 +163,18 @@ class ReligionGenerator:
                 )
                 variations.append(religion)
             except Exception as e:
-                logger.warning(f"Varyasyon {i+1} üretilemedi: {str(e)}")
+                logger.warning(f"Variation {i+1} could not be generated: {str(e)}")
                 continue
         
         return variations
     
     def expand_religion(self, religion: Religion, component_type: str) -> Religion:
         """
-        Mevcut dine yeni bileşenler ekler
+        Adds new components to existing religion
         
         Args:
-            religion: Mevcut din
-            component_type: Eklenecek bileşen türü
+            religion: Existing religion
+            component_type: Component type to add
         """
         
         try:
@@ -184,7 +184,7 @@ class ReligionGenerator:
                 religion
             )
             
-            # Yeni bileşeni dine ekle
+            # Add new component to religion
             if component_type == "deity":
                 new_deity = Deity(**new_component)
                 religion.deities.append(new_deity)
@@ -195,9 +195,9 @@ class ReligionGenerator:
                 new_legend = MythologicalLegend(**new_component)
                 religion.legends.append(new_legend)
             
-            logger.info(f"{religion.name} dinine yeni {component_type} eklendi")
+            logger.info(f"New {component_type} added to {religion.name} religion")
             return religion
             
         except Exception as e:
-            logger.error(f"Din genişletme hatası: {str(e)}")
+            logger.error(f"Religion expansion error: {str(e)}")
             raise

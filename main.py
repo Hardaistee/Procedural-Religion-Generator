@@ -14,7 +14,7 @@ from religion_generator import ReligionGenerator
 # Environment variables yükle
 load_dotenv()
 
-# Logging ayarları
+# Logging settings
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -34,11 +34,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Global değişkenler
+# Global variables
 religion_generator = ReligionGenerator()
-generated_religions = {}  # Üretilen dinleri sakla
+generated_religions = {}  # Store generated religions
 
-# Request modelleri
+# Request models
 class ReligionGenerationRequest(BaseModel):
     theme: Optional[str] = None
     culture: Optional[str] = None
@@ -55,7 +55,7 @@ class ReligionVariationRequest(BaseModel):
     base_theme: str
     count: int = 3
 
-# Response modelleri
+# Response models
 class ReligionResponse(BaseModel):
     id: str
     religion: Religion
@@ -66,10 +66,10 @@ class ComponentResponse(BaseModel):
     component: dict
     component_type: str
 
-# Ana endpoint'ler
+# Main endpoints
 @app.get("/")
 async def root():
-    """Ana sayfa"""
+    """Home page"""
     return {
         "message": "Procedural Religion Generator API",
         "version": "1.0.0",
@@ -86,14 +86,14 @@ async def root():
 @app.post("/religions/generate", response_model=ReligionResponse)
 async def generate_religion(request: ReligionGenerationRequest):
     """
-    Yeni bir din üretir
+    Generates a new religion
     """
     try:
         start_time = datetime.now()
         
-        logger.info(f"Yeni din üretim isteği: {request.dict()}")
+        logger.info(f"New religion generation request: {request.dict()}")
         
-        # Din üret
+        # Generate religion
         religion = religion_generator.generate_religion(
             theme=request.theme,
             culture=request.culture,
@@ -102,7 +102,7 @@ async def generate_religion(request: ReligionGenerationRequest):
             language=request.language
         )
         
-        # ID oluştur ve sakla
+        # Create ID and store
         religion_id = f"religion_{len(generated_religions) + 1}_{int(start_time.timestamp())}"
         generation_time = (datetime.now() - start_time).total_seconds()
         
@@ -112,7 +112,7 @@ async def generate_religion(request: ReligionGenerationRequest):
             "generation_time": generation_time
         }
         
-        logger.info(f"Din başarıyla üretildi: {religion_id}")
+        logger.info(f"Religion successfully generated: {religion_id}")
         
         return ReligionResponse(
             id=religion_id,
@@ -122,16 +122,16 @@ async def generate_religion(request: ReligionGenerationRequest):
         )
         
     except Exception as e:
-        logger.error(f"Din üretim hatası: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Din üretim hatası: {str(e)}")
+        logger.error(f"Religion generation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Religion generation error: {str(e)}")
 
 @app.get("/religions/{religion_id}", response_model=ReligionResponse)
 async def get_religion(religion_id: str):
     """
-    Belirli bir dini getirir
+    Gets a specific religion
     """
     if religion_id not in generated_religions:
-        raise HTTPException(status_code=404, detail="Din bulunamadı")
+        raise HTTPException(status_code=404, detail="Religion not found")
     
     religion_data = generated_religions[religion_id]
     
@@ -145,7 +145,7 @@ async def get_religion(religion_id: str):
 @app.get("/religions")
 async def list_religions():
     """
-    Tüm üretilen dinleri listeler
+    Lists all generated religions
     """
     religions_list = []
     
@@ -167,7 +167,7 @@ async def list_religions():
 @app.post("/components/generate", response_model=ComponentResponse)
 async def generate_component(request: ComponentGenerationRequest):
     """
-    Belirli bir din bileşeni üretir
+    Generates a specific religion component
     """
     try:
         existing_religion = None
@@ -186,13 +186,13 @@ async def generate_component(request: ComponentGenerationRequest):
         )
         
     except Exception as e:
-        logger.error(f"Bileşen üretim hatası: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Bileşen üretim hatası: {str(e)}")
+        logger.error(f"Component generation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Component generation error: {str(e)}")
 
 @app.post("/religions/variations")
 async def generate_religion_variations(request: ReligionVariationRequest):
     """
-    Aynı temadan farklı din varyasyonları üretir
+    Generates different religion variations from the same theme
     """
     try:
         variations = religion_generator.generate_religion_variations(
@@ -221,16 +221,16 @@ async def generate_religion_variations(request: ReligionVariationRequest):
         }
         
     except Exception as e:
-        logger.error(f"Varyasyon üretim hatası: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Varyasyon üretim hatası: {str(e)}")
+        logger.error(f"Variation generation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Variation generation error: {str(e)}")
 
 @app.post("/religions/{religion_id}/expand")
 async def expand_religion(religion_id: str, component_type: str):
     """
-    Mevcut dine yeni bileşenler ekler
+    Adds new components to existing religion
     """
     if religion_id not in generated_religions:
-        raise HTTPException(status_code=404, detail="Din bulunamadı")
+        raise HTTPException(status_code=404, detail="Religion not found")
     
     try:
         religion_data = generated_religions[religion_id]
@@ -239,27 +239,27 @@ async def expand_religion(religion_id: str, component_type: str):
             component_type
         )
         
-        # Güncellenmiş dini sakla
+        # Store updated religion
         generated_religions[religion_id]["religion"] = expanded_religion
         
         return {
-            "message": f"Din başarıyla genişletildi",
+            "message": f"Religion successfully expanded",
             "religion_id": religion_id,
             "added_component": component_type,
             "religion": expanded_religion
         }
         
     except Exception as e:
-        logger.error(f"Din genişletme hatası: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Din genişletme hatası: {str(e)}")
+        logger.error(f"Religion expansion error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Religion expansion error: {str(e)}")
 
 @app.get("/religions/{religion_id}/summary")
 async def get_religion_summary(religion_id: str):
     """
-    Din hakkında özet bilgi verir
+    Provides summary information about religion
     """
     if religion_id not in generated_religions:
-        raise HTTPException(status_code=404, detail="Din bulunamadı")
+        raise HTTPException(status_code=404, detail="Religion not found")
     
     religion = generated_religions[religion_id]["religion"]
     
@@ -280,22 +280,22 @@ async def get_religion_summary(religion_id: str):
 @app.delete("/religions/{religion_id}")
 async def delete_religion(religion_id: str):
     """
-    Belirli bir dini siler
+    Deletes a specific religion
     """
     if religion_id not in generated_religions:
-        raise HTTPException(status_code=404, detail="Din bulunamadı")
+        raise HTTPException(status_code=404, detail="Religion not found")
     
     deleted_religion = generated_religions.pop(religion_id)
     
     return {
-        "message": "Din başarıyla silindi",
+        "message": "Religion successfully deleted",
         "deleted_religion": deleted_religion["religion"].name
     }
 
 # Health check endpoint
 @app.get("/health")
 async def health_check():
-    """Sistem sağlık kontrolü"""
+    """System health check"""
     return {
         "status": "healthy",
         "timestamp": datetime.now(),
@@ -305,8 +305,8 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
     
-    # Port numarasını environment variable'dan al, yoksa varsayılan 8000 kullan
+    # Get port number from environment variable, use default 8000 if not set
     port = int(os.getenv("PORT", 8000))
     
-    logger.info(f"Uygulama başlatılıyor - Port: {port}")
+    logger.info(f"Starting application - Port: {port}")
     uvicorn.run(app, host="0.0.0.0", port=port)
